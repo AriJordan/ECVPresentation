@@ -1,2 +1,5 @@
 # Visual studio
 .vs/*
+
+# New pdfs
+*.pdf

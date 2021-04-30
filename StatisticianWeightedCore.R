@@ -33,10 +33,10 @@ while(!converg){
 }
 
 dim(W)
-# Plot all authors
+# Plot only authors with (citations > 15)
 plotNetwork(W)
 
-# Remove edges with weight 1
+# Plot only edges with (weight > 1)
 plotNetwork(W, remove=1)
 
 PSVD <- irlba(W,nv=100)
