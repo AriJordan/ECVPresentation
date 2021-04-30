@@ -7,12 +7,17 @@ source("LeiFunc-Final.R")
 source("SimonFunk.R")
 source("RandomHoldout.R")
 source("ArashGen.R")
+source("AriHelpers.R")
 
 # load citations data
 load("AuthorCitationWeight.Rda")
 W <- (abs(tot.cite+t(tot.cite))+abs(tot.cite-t(tot.cite)))/2 # weighted graph
 n <- dim(W) # number of authors
 rownames(W) <- colnames(W) <- authors
+
+dim(W)
+# Plot all authors
+plotNetwork(W)
 
 # build 15-core
 converg <- FALSE
@@ -26,7 +31,13 @@ while(!converg){
     old.nrow <- length(to.keep)
     W <- W[to.keep,to.keep]
 }
+
 dim(W)
+# Plot all authors
+plotNetwork(W)
+
+# Remove edges with weight 1
+plotNetwork(W, remove=1)
 
 PSVD <- irlba(W,nv=100)
 
@@ -227,62 +238,7 @@ weighted.cluster0[[20]] ## unclear
 ss <- load("StatisticianWeightedCore-Result.Rda")
 
 
-## plot
 
-dim(W)
-
-n <- nrow(W)
-
-
-A <- matrix(0,n,n)
-
-A[as.matrix(W)>0] <- 1
-
-diag(A) <- 0
-
-library(igraph)
-
-g <- graph.adjacency(A,mode="undirected")
-
-library(RColorBrewer)
-
-colors <- colorRampPalette(brewer.pal(9,"YlOrRd"))(8)
-
-d <- colSums(W)
-
-summary(d)
-
-quantile(d,0.99)
-
-
-authors <- rownames(W)
-
-hub.index <- which(d>330)
-plot.d <- d
-plot.authors <- rep(NA,n)
-plot.authors[hub.index] <- authors[hub.index]
-
-V(g)$name <- plot.authors
-V(g)$size <- sqrt(d)*0.5
-V(g)$label.cex <- 1
-
-plot.color <- rep(colors[1],n)
-plot.color[d>quantile(d,0.5)] <- colors[2]
-plot.color[d>quantile(d,0.75)] <- colors[3]
-plot.color[d>quantile(d,0.9)] <- colors[4]
-plot.color[d>quantile(d,0.99)] <- colors[6]
-
-
-
-V(g)$color <- plot.color
-
-author.layout <- layout.fruchterman.reingold(g)
-
-
-
-pdf("AuthorWeightNet15Core.pdf",height=12,width=12)
-plot(g,layout=author.layout,vertex.label=NA,edge.width=0.8)
-dev.off()
 
 
 
