@@ -60,14 +60,13 @@ source("RandomHoldout-FinalSP_TestWeight.R")
 set.seed(500)
 #system.time(tune <- EdgeCV.REG.DC.Weight(W,h.seq,K=K,B=30,holdout.p=0.1,Arash=TRUE,fast=TRUE))
 #saveRDS(tune, file = "tune.rds")
-tune <- readRDS("tune.rds")
+tune <- readRDS("tune.Rda")
 
 names(tune)
 
 tune$gap.which.min
 tune$gap.min.stable
 tune$gap.min.avg
-
 
 
 
