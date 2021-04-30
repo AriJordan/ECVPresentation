@@ -33,34 +33,34 @@ PSVD <- irlba(W,nv=100)
 plot(1:100,PSVD$d)
 
 # Stability selection, (Meinhausen & Peter Bühlmann, 2010)
+
+
 result <- foreach(k = 1:100, .packages='irlba')%dopar%{
     set.seed(k)
     random.est <- ECV.undirected.Rank.weighted(W,40,B=3,holdout.p=0.1,soft=FALSE,fast=TRUE)
     tmp <- which.min(random.est$sse)
 }
 
+
 # Count rank occurences
 SSE.K <- unlist(result)
 (occurences <- table(SSE.K))
+plot(occurences)
 
 # Select rank
 (K <- as.numeric(names(which.max(occurences))))
 
-
-authors
+(authors <- rownames(W))
 length(authors)
-
-rownames(W)
-
-authors <- rownames(W)
 
 
 h.seq <- seq(0,2,by=0.1)
 
 source("RandomHoldout-FinalSP_TestWeight.R")
 set.seed(500)
-system.time(tune <- EdgeCV.REG.DC.Weight(W,h.seq,K=K,B=30,holdout.p=0.1,Arash=TRUE,fast=TRUE))
-
+#system.time(tune <- EdgeCV.REG.DC.Weight(W,h.seq,K=K,B=30,holdout.p=0.1,Arash=TRUE,fast=TRUE))
+#saveRDS(tune, file = "tune.rds")
+tune <- readRDS("tune.rds")
 
 names(tune)
 
@@ -101,7 +101,7 @@ km1 <- kmeans(U.norm,centers=20,iter.max=500,nstart=500)
 
 weighted.label1 <- km1$cluster
 weighted.cluster1 <- list()
-for(k in 1:20){
+for(k in 1:K){
     tmp.authors <- authors[weighted.label1==k]
     tmp.degrees <- d[weighted.label1==k]
     tmp.index <- sort(tmp.degrees,decreasing=TRUE,index.return=TRUE)$ix
@@ -136,35 +136,24 @@ weighted.cluster1[[20]] ## functional data analysis
 
 
 
-df <- rep("",20)
-for(k in 1:20){
-    df[k] <- paste(weighted.cluster1[[k]][1:10,1],collapse=", ")
+df <- rep("",K)
+for(k in 1:K){
+    df[k] <- paste(weighted.cluster1[[k]][1:7,1],collapse=", ")
 }
 
 df <- data.frame(authors=df)
-
-
-
 
 library(xtable)
 print(xtable(df))
 
 
 
-
-
-
-
-
-df <- rep("",20)
-for(k in 1:20){
+df <- rep("",K)
+for(k in 1:K){
     df[k] <- paste(weighted.cluster1[[k]][,1],collapse=", ")
 }
 
 df <- data.frame(authors=df)
-
-
-
 
 library(xtable)
 print(xtable(df))
@@ -231,18 +220,6 @@ weighted.cluster0[[17]] ## multiple testing and inference
 weighted.cluster0[[18]] ## functional data analysis, non-parametric/semi-parametric modeling
 weighted.cluster0[[19]] ## unclear
 weighted.cluster0[[20]] ## unclear
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
