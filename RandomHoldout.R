@@ -437,7 +437,6 @@ missing.Rank.fast.all <- function(holdout.index,A,max.K,p.sample=NULL){
 #### Using AUC to evaluate intrinsic rank
 ECV.undirected.Rank.weighted <- function(A,max.K,B=3,holdout.p=0.1,soft=FALSE,fast=fast){
     n <- nrow(A)
-    #edge.index <- 1:n^2
     edge.index <- which(upper.tri(A))
     edge.n <- length(edge.index)
 

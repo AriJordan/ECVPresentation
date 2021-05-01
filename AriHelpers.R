@@ -1,11 +1,13 @@
-require(doParallel)
-registerDoParallel(cores=6)
-
 source("LeiFunc-Final.R")
 source("SimonFunk.R")
 source("RandomHoldout.R")
 source("ArashGen.R")
 source("RandomHoldout-FinalSP_TestWeight.R")
+
+# Build weighted network
+weightedNetwork <- function(tot.cite){
+  return (abs(tot.cite+t(tot.cite))+abs(tot.cite-t(tot.cite)))/2
+}
 
 # Plot a weighted network in red-yellow
 plotNetwork <- function(W, remove=0){
@@ -47,11 +49,9 @@ plotNetwork <- function(W, remove=0){
   plot(g, edge.width=sqrt(pmax(0, E(g)$weight-remove))-0.1, layout=layout_with_fr, margin=c(-0.2,-1,-0.2,-1))
   
   return(g)
-  #author.layout <- layout.fruchterman.reingold(g)
-  #plot(g,layout=author.layout,vertex.label=NA,edge.width=0.8)
 }
 
-plotGroups <- function(g, weighted.cluster, remove=0){
+plotClusters <- function(g, weighted.cluster, remove=0){
   K <- length(weighted.cluster)
   library(Polychrome)
   set.seed(3) # 3
@@ -64,5 +64,8 @@ plotGroups <- function(g, weighted.cluster, remove=0){
   set.seed(5) # 5
   plot(g, edge.width=sqrt(pmax(0, E(g)$weight-remove))-0.1, layout=layout_with_fr, margin=c(-0.2,-1,-0.2,-1))
 }
+
+
+
 
 #pdf("AuthorWeightNet15Core.pdf",height=12,width=12)

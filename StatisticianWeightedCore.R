@@ -4,7 +4,7 @@ source("AriHelpers.R")
 
 # load citations data
 load("AuthorCitationWeight.Rda")
-W <- (abs(tot.cite+t(tot.cite))+abs(tot.cite-t(tot.cite)))/2 # weighted graph
+W <- weightedNetwork(tot.cite) # weighted undirected graph
 n <- dim(W) # number of authors
 rownames(W) <- colnames(W) <- authors
 
@@ -24,6 +24,7 @@ while(!converg){
     old.nrow <- length(to.keep)
     W <- W[to.keep,to.keep]
 }
+authors <- rownames(W)
 
 dim(W)
 # Plot only authors with (citations > 15)
@@ -32,91 +33,67 @@ plotNetwork(W)
 # Plot only edges with (weight > 1)
 g <- plotNetwork(W, remove=1)
 
-PSVD <- irlba(W,nv=100)
+# Plot largest singular values
+partial.SVD <- irlba(W,nv=100)
+plot(1:100,partial.SVD$d)
 
-plot(1:100,PSVD$d)
 
-# Stability selection, (Meinshausen & Peter Bühlmann, 2010)
-#result <- foreach(k = 1:100, .packages='irlba')%dopar%{
-#set.seed(k)
+# Choose rank K with ECV
 random.est <- ECV.undirected.Rank.weighted(W,40,B=30,holdout.p=0.1,soft=FALSE,fast=TRUE)
-(tmp <- which.min(random.est$sse))
-#}
+(K <- which.min(random.est$sse))
+# Stability selection?, (Meinshausen & Bühlmann, 2010)
 
-# Count rank occurences
-#SSE.K <- unlist(result)
-#(occurences <- table(SSE.K))
-#plot(occurences)
 
-# Select rank
-K <- tmp
-# (K <- as.numeric(names(which.max(occurences))))
-
-# Clustering with parameter
+# Choose parameter tau with ECV for spectral clustering
 tau.seq <- seq(0,3,by=0.1)
-
-set.seed(500)
 #system.time(tune <- EdgeCV.REG.DC.Weight(W,h.seq,K=K,B=10,holdout.p=0.1,Arash=TRUE,fast=TRUE))
 #saveRDS(tune, file = "tune.Rda")
 tune <- readRDS("tune.Rda")
 
-names(tune)
+# Pick best tau
+(best.tau <- tune$gap.min.avg)
 
-tune$gap.which.min
-tune$gap.min.stable
-tune$gap.min.avg
-
-
+# Apply degree regularization
 d <- colSums(W)
-W.reg <- W + tau.seq[tune$gap.min.avg]*mean(d)/n
-
+W.reg <- W + tau.seq[best.tau]*mean(d)/n
 d.reg <- colSums(W.reg)
 
-L0 <- t(t(W.reg/sqrt(d.reg))/sqrt(d.reg))
+# Laplacian
+L <- t(t(W.reg/sqrt(d.reg))/sqrt(d.reg))
 
 
-PSVD <- irlba(L0,nv=K)
+# Spectral clustering
+# Partial singular value decomposition of Laplacian
+partial.SVD <- irlba(L,nv=K)
 
-U <- PSVD$u
-
-dim(U)
-
-summary(colSums(W))
-
-
+# take K leading eigenvectors, normalize
+U <- partial.SVD$u
 norms <- apply(U,1,function(x)sqrt(sum(x^2)))
-
 U.norm <- U/norms
 
+# K-means clustering
 set.seed(500)
 km <- kmeans(U.norm,centers=K,iter.max=500,nstart=500)
 
 
+# Separate authors into the K clusters
 weighted.label <- km$cluster
 weighted.cluster <- list()
 for(k in 1:K){
-    print(tmp.positions <- which(weighted.label==k))
     tmp.authors <- authors[weighted.label==k]
     tmp.degrees <- d[weighted.label==k]
     tmp.index <- sort(tmp.degrees,decreasing=TRUE,index.return=TRUE)$ix
-    
     weighted.cluster[[k]] <- cbind(tmp.authors[tmp.index],tmp.degrees[tmp.index],tmp.positions[tmp.index])
 }
 
-weighted.cluster
+# Plot the K clusters
+plotClusters(g, weighted.cluster, remove=1.0)
 
-plotGroups(g, weighted.cluster, remove=1.0)
-
-#save(km1,SSE.K,tune,file="CitationTune.Rda")
-#load("CitationTune.Rda")
-
-
+# Turn clusters into latex table
 df <- rep("",K)
 for(k in 1:K){
-    df[k] <- paste(weighted.cluster[[k]][1:min(20, length(weighted.cluster[[k]][,1])-1),1],collapse=", ")
+    df[k] <- paste(weighted.cluster[[k]][1:min(7, length(weighted.cluster[[k]][,1])-1),1],collapse=", ")
 }
-
 df <- data.frame(authors=df)
-
 library(xtable)
 print(xtable(df))
