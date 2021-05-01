@@ -72,7 +72,7 @@ norms <- apply(U,1,function(x)sqrt(sum(x^2)))
 U.norm <- U/norms
 
 # K-means clustering
-set.seed(500)
+set.seed(1)
 km <- kmeans(U.norm,centers=K,iter.max=500,nstart=500)
 
 
@@ -80,6 +80,7 @@ km <- kmeans(U.norm,centers=K,iter.max=500,nstart=500)
 weighted.label <- km$cluster
 weighted.cluster <- list()
 for(k in 1:K){
+    tmp.positions <- which(weighted.label==k)
     tmp.authors <- authors[weighted.label==k]
     tmp.degrees <- d[weighted.label==k]
     tmp.index <- sort(tmp.degrees,decreasing=TRUE,index.return=TRUE)$ix
