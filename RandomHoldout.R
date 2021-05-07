@@ -441,13 +441,15 @@ ECV.undirected.Rank.weighted <- function(A,max.K,B=3,holdout.p=0.1,soft=FALSE,fa
     edge.n <- length(edge.index)
 
     holdout.index.list <- list()
+    result <- list()
 
     holdout.n <- floor(holdout.p*edge.n)
 
     for(j in 1:B){
+        print(paste("Fold number: ", j))
         holdout.index.list[[j]] <- sample(x=edge.n,size=holdout.n)
+        result[[j]] <- missing.undirected.Rank.weighted.fast.all(holdout.index.list[[j]], A=A,max.K=max.K,soft=soft,fast=fast,p.sample=1-holdout.p)
     }
-    result <- lapply(holdout.index.list,missing.undirected.Rank.weighted.fast.all,A=A,max.K=max.K,soft=soft,fast=fast,p.sample=1-holdout.p)
     sse.mat <- roc.auc.mat <- matrix(0,nrow=B,ncol=max.K)
     
     for(b in 1:B){
@@ -542,7 +544,6 @@ missing.undirected.Rank.weighted.fast.all <- function(holdout.index,A,max.K,soft
     sse <- roc.auc <- rep(0,max.K)
     SVD.result <- iter.SVD.core.fast.all(A.new,max.K,fast=TRUE,p.sample=p.sample)
     for(k in 1:max.K){
-        print(k)
         tmp.est <- SVD.result[[k]]
         A.approx <- tmp.est$A
         response <- A[Omega]

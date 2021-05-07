@@ -266,7 +266,7 @@ iter.SVD.core.fast.all <- function(A,Kmax,tol=1e-5,max.iter=100,sparse=TRUE,init
     #print("end SVD")
     result <- list()
     for(K in 1:Kmax){
-        print(K)
+        #print(K)
         if(K==1){
             A.new <- svd.new$d[1]*matrix(svd.new$u[,1],ncol=1)%*%t(matrix(svd.new$v[,1],ncol=1))
         }else{
