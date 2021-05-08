@@ -446,10 +446,11 @@ ECV.undirected.Rank.weighted <- function(A,max.K,B=3,holdout.p=0.1,soft=FALSE,fa
     holdout.n <- floor(holdout.p*edge.n)
 
     for(j in 1:B){
-        print(paste("Fold number: ", j))
+        cat("Fold number:", j, "\n")
         holdout.index.list[[j]] <- sample(x=edge.n,size=holdout.n)
         result[[j]] <- missing.undirected.Rank.weighted.fast.all(holdout.index.list[[j]], A=A,max.K=max.K,soft=soft,fast=fast,p.sample=1-holdout.p)
     }
+    #result <- lapply(holdout.index.list,missing.undirected.Rank.weighted.fast.all,A=A,max.K=max.K,soft=soft,fast=fast,p.sample=1-holdout.p)
     sse.mat <- roc.auc.mat <- matrix(0,nrow=B,ncol=max.K)
     
     for(b in 1:B){

@@ -31,13 +31,15 @@ build.core <- function(W, min.citations){
 ECV.K <- function(W, max.K, folds=10, holdout.p=0.1){
   set.seed(2)
   random.est <- ECV.undirected.Rank.weighted(W, max.K, B=folds, holdout.p=holdout.p, soft=FALSE, fast=TRUE)
-  K <- which.min(random.est$sse)
+  SSE = random.est$sse
+  plot(SSE, xlab="K")
+  K <- which.min(SSE)
   return(K)
 }
 
-ECV.tau <- function(W, try.tau, folds=10, holdout.p=0.1){
+ECV.tau <- function(W, K, try.tau, folds=10, holdout.p=0.1){
   tau.seq <- seq(0,3,by=0.1)
-  #system.time(tune <- EdgeCV.REG.DC.Weight(W,h.seq,K=K,B=10,holdout.p=0.1,Arash=TRUE,fast=TRUE))
+  #system.time(tune <- EdgeCV.REG.DC.Weight(W,try.tau,K=K,B=folds,holdout.p=holdout.p,Arash=TRUE,fast=TRUE))
   #saveRDS(tune, file = "tune.Rda")
   tune <- readRDS("tune.Rda")
   # Pick best tau
@@ -46,9 +48,10 @@ ECV.tau <- function(W, try.tau, folds=10, holdout.p=0.1){
 }
 
 regularized.spectral.clustering <- function(W, n.clusters=K, regularization=tau){
-  
+  set.seed(1)
   # Apply degree regularization
   d <- colSums(W)
+  n <- nrow(W)
   W.reg <- W + tau*mean(d)/n
   d.reg <- colSums(W.reg)
   
@@ -150,7 +153,7 @@ plot.network <- function(W, hide=0){
 plot.colored.clusters <- function(g, clusters, hide=0){
   K <- length(clusters)
   library(Polychrome)
-  set.seed(2) # 3
+  set.seed(2) # 2
   colors = createPalette(K,  c("#ff0000", "#ffff00", "#0000ff"))
   for(k in 1:K){
     for (a in 1:length(clusters[[k]][,3])){

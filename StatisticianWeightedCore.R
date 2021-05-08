@@ -5,15 +5,17 @@ source("AriHelpers.R")
 # Load citations data
 W <- weighted.citation.network() # weighted undirected graph
 
-# Number of authors
-(n <- dim(W))
+# Total number of authors
+length(authors <- rownames(W))
 
 # Plot all authors
 plot.network(W)
 
 # build 15-core
 W <- build.core(W, min.citations=15)
-length(authors <- rownames(W))
+
+# Number of authors with (citations >= 15)
+(length(authors <- rownames(W)))
 
 # Plot only authors with (citations >= 15)
 plot.network(W)
@@ -22,15 +24,15 @@ plot.network(W)
 g <- plot.network(W, hide=1)
 
 # Plot 100 largest singular values
-plot(1:100, irlba(W, nv=100)$d)
+plot(irlba(W, nv=100)$d, main= "100 biggest singular values of W", xlab="Index", ylab="Value")
 
 # Choose rank K with ECV
 (K <- ECV.K(W, max.K=40, folds=10, holdout.p=0.1))
 
-# Choose parameter tau with ECV for regularized clustering
-(tau <- ECV.tau(W, try.tau=seq(0,3,by=0.1), folds=10, holdout.p=0.1))
+# Choose parameter tau with ECV
+(tau <- ECV.tau(W, K, try.tau=seq(0, 3, by=0.1), folds=10, holdout.p=0.1))
 
-# Apply model on W
+# Obtain model M from W
 M <- regularized.spectral.clustering(W, n.clusters=K, regularization=tau)
 
 # Separate authors into the K clusters with k-means
