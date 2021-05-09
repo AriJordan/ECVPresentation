@@ -32,13 +32,10 @@ plot(irlba(W, nv=100)$d, main= "100 biggest singular values of W", xlab="Index",
 # Choose parameter tau with ECV
 (tau <- ECV.tau(W, K, try.tau=seq(0, 3, by=0.1), folds=10, holdout.p=0.1))
 
-# Obtain model M from W
-M <- regularized.spectral.clustering(W, n.clusters=K, regularization=tau)
+# Obtain clusters based on W, K and tau
+clusters <- regularized.spectral.clustering.with.kmeans(W, n.clusters=K, regularization=tau)
 
-# Separate authors into the K clusters with k-means
-clusters <- cluster.with.kmeans(M, n.clusters=K)
-
-# Plot the K clusters
+# Plot the K clusters in colors
 plot.colored.clusters(g, clusters, hide=1.0)
 
 # Turn clusters into latex table

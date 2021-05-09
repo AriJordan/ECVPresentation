@@ -12,82 +12,6 @@ weighted.citation.network <- function(){
   return(W)
 }
 
-# Build core of network
-build.core <- function(W, min.citations){
-  converg <- FALSE
-  old.nrow <- nrow(W)
-  while(!converg){
-    d <- colSums(W)
-    to.keep <- which(d>=15)
-    if(old.nrow==length(to.keep)){
-      converg <- TRUE
-    }
-    old.nrow <- length(to.keep)
-    W <- W[to.keep,to.keep]
-  }
-  return(W)
-}
-
-ECV.K <- function(W, max.K, folds=10, holdout.p=0.1){
-  set.seed(2)
-  random.est <- ECV.undirected.Rank.weighted(W, max.K, B=folds, holdout.p=holdout.p, soft=FALSE, fast=TRUE)
-  SSE = random.est$sse
-  plot(SSE, xlab="K")
-  K <- which.min(SSE)
-  return(K)
-}
-
-ECV.tau <- function(W, K, try.tau, folds=10, holdout.p=0.1){
-  tau.seq <- seq(0,3,by=0.1)
-  #system.time(tune <- EdgeCV.REG.DC.Weight(W,try.tau,K=K,B=folds,holdout.p=holdout.p,Arash=TRUE,fast=TRUE))
-  #saveRDS(tune, file = "tune.Rda")
-  tune <- readRDS("tune.Rda")
-  # Pick best tau
-  best.tau <- tune$gap.min.avg # avg -> Stability selection?, (Meinshausen & Bühlmann, 2010)
-  return(tau.seq[best.tau])
-}
-
-regularized.spectral.clustering <- function(W, n.clusters=K, regularization=tau){
-  set.seed(1)
-  # Apply degree regularization
-  d <- colSums(W)
-  n <- nrow(W)
-  W.reg <- W + tau*mean(d)/n
-  d.reg <- colSums(W.reg)
-  
-  # Laplacian
-  L <- t(t(W.reg/sqrt(d.reg))/sqrt(d.reg))
-  
-  
-  # Spectral clustering
-  # Partial singular value decomposition of Laplacian
-  partial.SVD <- irlba(L,nv=K)
-  
-  # take K leading eigenvectors, normalize
-  U <- partial.SVD$u
-  norms <- apply(U,1,function(x)sqrt(sum(x^2)))
-  U.norm <- U/norms
-  return(U.norm)
-}
-
-cluster.with.kmeans <- function(M, n.clusters){
-  d <- colSums(W)
-  # K-means clustering
-  set.seed(1)
-  km <- kmeans(M,centers=K,iter.max=500,nstart=500)
-  
-  weighted.label <- km$cluster
-  clusters <- list()
-  for(k in 1:K){
-    tmp.positions <- which(weighted.label==k)
-    tmp.authors <- authors[weighted.label==k]
-    tmp.degrees <- d[weighted.label==k]
-    tmp.index <- sort(tmp.degrees,decreasing=TRUE,index.return=TRUE)$ix
-    clusters[[k]] <- cbind(tmp.authors[tmp.index],tmp.degrees[tmp.index],tmp.positions[tmp.index])
-  }
-  return(clusters)
-}
-
 # Plot using Fruchterman-Reingold
 plot.with.fr <- function(g, hide=0){
   set.seed(5) # 5
@@ -148,6 +72,85 @@ plot.network <- function(W, hide=0){
   
   plot.with.fr(g, hide)
   return(g)
+}
+
+# Build core of network
+build.core <- function(W, min.citations){
+  converg <- FALSE
+  old.nrow <- nrow(W)
+  while(!converg){
+    d <- colSums(W)
+    to.keep <- which(d>=15)
+    if(old.nrow==length(to.keep)){
+      converg <- TRUE
+    }
+    old.nrow <- length(to.keep)
+    W <- W[to.keep,to.keep]
+  }
+  return(W)
+}
+
+# Use ECV to determine best K
+ECV.K <- function(W, max.K, folds=10, holdout.p=0.1){
+  set.seed(2)
+  random.est <- ECV.undirected.Rank.weighted(W, max.K, B=folds, holdout.p=holdout.p, soft=FALSE, fast=TRUE)
+  SSE = random.est$sse
+  plot(SSE, xlab="K")
+  K <- which.min(SSE)
+  return(K)
+}
+
+# Use ECV to determine best tau
+ECV.tau <- function(W, K, try.tau, folds=10, holdout.p=0.1){
+  tau.seq <- seq(0,3,by=0.1)
+  #system.time(tune <- EdgeCV.REG.DC.Weight(W,try.tau,K=K,B=folds,holdout.p=holdout.p,Arash=TRUE,fast=TRUE))
+  #saveRDS(tune, file = "tune.Rda")
+  tune <- readRDS("tune.Rda")
+  # Pick best tau
+  best.tau <- tune$gap.min.avg # avg -> Stability selection?, (Meinshausen & Bühlmann, 2010)
+  return(tau.seq[best.tau])
+}
+
+cluster.with.kmeans <- function(M, n.clusters){
+  d <- colSums(W)
+  # K-means clustering
+  set.seed(1)
+  km <- kmeans(M,centers=K,iter.max=500,nstart=500)
+  
+  weighted.label <- km$cluster
+  clusters <- list()
+  for(k in 1:K){
+    tmp.positions <- which(weighted.label==k)
+    tmp.authors <- authors[weighted.label==k]
+    tmp.degrees <- d[weighted.label==k]
+    tmp.index <- sort(tmp.degrees,decreasing=TRUE,index.return=TRUE)$ix
+    clusters[[k]] <- cbind(tmp.authors[tmp.index],tmp.degrees[tmp.index],tmp.positions[tmp.index])
+  }
+  return(clusters)
+}
+
+regularized.spectral.clustering.with.kmeans <- function(W, n.clusters=K, regularization=tau){
+  set.seed(1)
+  # Apply degree regularization
+  d <- colSums(W)
+  n <- nrow(W)
+  W.reg <- W + tau*mean(d)/n
+  d.reg <- colSums(W.reg)
+  
+  # Laplacian
+  L <- t(t(W.reg/sqrt(d.reg))/sqrt(d.reg))
+  
+  
+  # Spectral clustering
+  # Partial singular value decomposition of Laplacian
+  partial.SVD <- irlba(L,nv=K)
+  
+  # take K leading eigenvectors, normalize
+  U <- partial.SVD$u
+  norms <- apply(U,1,function(x)sqrt(sum(x^2)))
+  U.norm <- U/norms
+  clusters <- cluster.with.kmeans(U.norm, n.clusters=n.clusters)
+  return(clusters)
 }
 
 plot.colored.clusters <- function(g, clusters, hide=0){
